@@ -6,9 +6,13 @@ import productRouter from './routes/productRouter.js'
 import verifyJWT from './middleware/auth.js'
 import orderRouter from './routes/orderRouter.js'
 import dotenv from "dotenv"
+import cors from "cors"
+
 dotenv.config()  //Loading data that include in the ".env" file to this file
 
 const app = express()
+
+app.use(cors())
 
 mongoose.connect(process.env.MONGO_URL).then(
     () => {
@@ -24,9 +28,6 @@ mongoose.connect(process.env.MONGO_URL).then(
 app.use(bodyParser.json())
 app.use(verifyJWT)       // Middleware to authenticate users based on the "Authorization" header
 
-
-
- 
 
 app.use("/api/user", userRouter)
 

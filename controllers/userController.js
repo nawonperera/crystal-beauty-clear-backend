@@ -1,6 +1,8 @@
 import User from "../models/user.js";
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv"
+dotenv.config()
 
 export function saveUser(req,res){
 
@@ -74,13 +76,14 @@ export function loginUser(req, res){
                 }
                 
                 // Generating a JWT (JSON Web Token) using the userData object
-                // "random456" is the secret key used to sign the token
-                const token = jwt.sign(userData, "random456")
+                // JWT_KEY is the secret key used to sign the token
+                const token = jwt.sign(userData, process.env.JWT_KEY)
                 
                 // Sending a JSON response with a success message and the generated token
                 res.json({
                     message: "Login Successful", // Success message for the login process
                     token: token,                // JWT token to be used for authentication/authorization
+                    user:userData
                 })
 
             }else{
