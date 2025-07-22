@@ -1,97 +1,113 @@
-import Order from "../models/order.js"
+import Order from "../models/order.js";
+import Product from "../models/product.js";
 
-export function createOrder(req, res){
-
-    if(req.user == null){
+export function createOrder(req, res) {
+    if (req.user == null) {
         res.status(401).json({
-            message: "Unauthorized"
-        })
-        return
+            message: "Unauthorized",
+        });
+        return;
     }
-    const body = req.body
+
+    const body = req.body;
+
     const orderData = {
-        orderId : "",
+        orderId: "",
         email: req.user.email,
         name: body.name,
         address: body.address,
         phoneNumber: body.phoneNumber,
-        billItems:[],
-        total: 0
-    }
+        billItems: [],
+        total: 0,
+    };
 
-    // Retrieve the most recent order by sorting all orders in descending order based on the 'date' field and limiting the result to only one document.
-    Order.find().sort({ date: -1 }).limit(1).then((lastBills) =>{
-        if(lastBills.length == 0){ 
-            orderData.orderId = "ORD001"  // If no previous orders exist, start with the first order ID
-        }else{
-    
-            const lastBill = lastBills[0]      // Retrieve the last bill from the list
-            const lastOrderId = lastBill.orderId    // Extract the last order ID (e.g., "ORD0061")
-            const lastOrderNumber = lastOrderId.replace("ORD", "")     // Remove the "ORD" prefix to get only the numeric part (e.g., "0061")
-            const lastOrderNumberInt = parseInt(lastOrderNumber)     // Convert the extracted numeric part to an integer (e.g., 61)
-            const newOrderNumberInt = lastOrderNumberInt + 1      // Increment the order number (e.g., 62)
-            const newOrderNumberStr = newOrderNumberInt.toString().padStart(4, '0')    // Convert the new number back to a string and pad with zeros to maintain format (e.g., "0062")
-    
-            orderData.orderId = "ORD" + newOrderNumberStr     // Construct the new order ID (e.g., "ORD0062")
-    
-        }
-        
-        for(let i = 0;  i< body.billItems.length; i++){
-            const billItem = body.billItems[i]
-            //check if product exists
-        }
-    
-        const order = new Order(orderData)
-        order.save().then(() => {
-            res.json({
-                message: "Order saved successfully"
-            })
-        }).catch((err) => {
-            console.log(err);
-            res.status(500).json({
-                message: "Order not saved"
-            })
-            
-        })
-    })    
+    Order.find()
+        .sort({ date: -1 })
+        .limit(1)
+        .then(async (lastBills) => {
+            if (lastBills.length === 0) {
+                orderData.orderId = "ORD001";
+            } else {
+                const lastBill = lastBills[0];
+                const lastOrderId = lastBill.orderId;
+                const lastOrderNumber = lastOrderId.replace("ORD", "");
+                const lastOrderNumberInt = parseInt(lastOrderNumber);
+                const newOrderNumberInt = lastOrderNumberInt + 1;
+                const newOrderNumberStr = newOrderNumberInt.toString().padStart(4, "0");
+
+                orderData.orderId = "ORD" + newOrderNumberStr;
+            }
+
+            for (let i = 0; i < body.billItems.length; i++) {
+                //check if the product exists
+                const product = await Product.findOne({
+                    productID: body.billItems[i].productId,
+                });
+                if (product === null) {
+                    res.status(404).json({
+                        message: "Product with product id " + body.billItems[i].productId + " not found.",
+                    });
+                    return;
+                }
+
+                orderData.billItems[i] = {
+                    productId: product.productID,
+                    productName: product.name,
+                    image: product.images[0],
+                    quantity: body.billItems[i].quantity,
+                    price: product.price,
+                };
+                orderData.total = orderData.total + product.price * body.billItems[i].quantity;
+            }
+
+            const order = new Order(orderData);
+            order
+                .save()
+                .then(() => {
+                    res.json({
+                        message: "Order saved successfully",
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    res.status(500).json({
+                        message: "Order not saved",
+                    });
+                });
+        });
 }
 
-export function getOrders(req,res){
-
-    if(req.user == null){
+export function getOrders(req, res) {
+    if (req.user == null) {
         res.status(401).json({
-            message: "Unauthorized"
-        })
-        return
+            message: "Unauthorized",
+        });
+        return;
     }
 
-    if (req.user.role == "admin"){
-        Order.find().then(
-            (orders)=>{
-                res.json(orders)
-            }
-        ).catch(
-            (err)=>{
+    if (req.user.role === "admin") {
+        Order.find()
+            .then((orders) => {
+                res.json(orders);
+            })
+            .catch((err) => {
                 res.status(500).json({
-                    message: "Orders not found"
-                })
-            }
-        )
-    }else{
+                    message: "Orders not found",
+                });
+            });
+    } else {
         Order.find({
-            email: req.user.email
-        }).then(
-            (orders)=>{
-                res.json(orders)
-            }
-        ).catch(
-            (err)=>{
+            email: req.user.email,
+        })
+            .then((orders) => {
+                res.json(orders);
+            })
+            .catch((err) => {
                 console.log(err);
-                
+
                 res.status(500).json({
-                    message: "Orders not found"
-                })
-            }
-        )
+                    message: "Orders not found",
+                });
+            });
     }
 }
