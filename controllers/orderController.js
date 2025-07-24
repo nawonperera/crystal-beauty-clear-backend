@@ -111,3 +111,24 @@ export function getOrders(req, res) {
             });
     }
 }
+
+export async function updateOrder(req, res) {
+    try {
+        if (req.user == null) {
+            res.status(401).json({
+                message: "Unauthorized",
+            });
+            return;
+        }
+        const orderId = req.params.orderId; // Get orderId from the URL parameters
+        const order = await Order.findOneAndUpdate({ orderId: orderId }, req.body); // Find the order by orderId and update it with the request body
+
+        res.json({
+            message: "Order update Successully.",
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Order not updated",
+        });
+    }
+}
