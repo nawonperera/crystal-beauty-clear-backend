@@ -7,6 +7,7 @@ import verifyJWT from "./middleware/auth.js";
 import orderRouter from "./routes/orderRouter.js";
 import dotenv from "dotenv";
 import cors from "cors";
+import bannerRouter from "./routes/bannerRoute.js";
 
 dotenv.config(); //Loading data that include in the ".env" file to this file
 
@@ -31,6 +32,8 @@ app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 
 app.use("/api/order", orderRouter);
+
+app.use("/api/banner", bannerRouter);
 
 app.listen(3000, () => {
     console.log("server is running on port 3000");

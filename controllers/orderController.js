@@ -124,7 +124,7 @@ export async function updateOrder(req, res) {
         const order = await Order.findOneAndUpdate({ orderId: orderId }, req.body); // Find the order by orderId and update it with the request body
 
         res.json({
-            message: "Order update Successully.",
+            message: "Order update Successfully.",
         });
     } catch (error) {
         res.status(500).json({
