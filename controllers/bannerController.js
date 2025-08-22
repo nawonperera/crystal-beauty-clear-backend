@@ -1,5 +1,5 @@
 import asyncHandler from "express-async-handler";
-import Banner from "../models/banner";
+import Banner from "../models/banner.js";
 
 // CREATE BANNER
 export const createBanner = asyncHandler(async (req, res) => {

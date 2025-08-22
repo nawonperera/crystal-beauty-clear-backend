@@ -1,5 +1,5 @@
 import express from "express";
-import { createBanner, deleteBanner, getAllBanners, getRandomBanner } from "../controllers/banner.controller.js";
+import { createBanner, deleteBanner, getAllBanners, getRandomBanner } from "../controllers/bannerController.js";
 
 const bannerRouter = express.Router();
 
