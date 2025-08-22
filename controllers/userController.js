@@ -3,7 +3,20 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import axios from "axios";
+import nodemailer from "nodemailer";
+import OTP from "../models/otp.js";
 dotenv.config();
+
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.RESET_PASSWORD_EMAIL, // Your email address
+        pass: process.env.RESET_PASSWORD_APP_PASSWORD, // Your email password or app password
+    },
+});
 
 export function saveUser(req, res) {
     if (req.body.role == "admin") {
@@ -167,4 +180,79 @@ export function getCurrentUser(req, res) {
     res.json({
         user: req.user,
     });
+}
+
+export async function sendOTP(req, res) {
+    const email = req.body.email;
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
+
+    const message = {
+        from: process.env.RESET_PASSWORD_EMAIL, // Sender's email address
+        to: email, // Recipient's email address
+        subject: "OPT for email verification",
+        text: `Your OTP for email verification is ${otp}.`,
+    };
+
+    // Save the OTP to the database
+    const newOtp = new OTP({
+        email: email,
+        otp: otp,
+    });
+
+    newOtp.save().then(() => {
+        console.log("OTP saved successfully");
+    });
+
+    transporter.sendMail(message, (error, info) => {
+        if (error) {
+            console.error("Error sending email:", error);
+            res.status(500).json({
+                message: "Failed to send OTP",
+            });
+        } else {
+            console.log("Email sent:", info.response);
+            res.json({
+                message: "OTP sent successfully",
+                otp: otp, // Return the OTP for verification
+            });
+        }
+    });
+}
+
+export async function changePassword(req, res) {
+    const email = req.body.email;
+    const password = req.body.password;
+    const otp = req.body.otp;
+
+    try {
+        const lastOTPData = await OTP.findOne({
+            email: email,
+        }).sort({ createdAt: -1 });
+
+        if (lastOTPData == null) {
+            res.status(404).json({
+                message: "No OTP found for this email",
+            });
+            return;
+        }
+
+        if (lastOTPData.otp !== otp) {
+            res.status(403).json({
+                message: "Invalid OTP",
+            });
+            return;
+        }
+
+        const hashedPassword = bcrypt.hashSync(password, 10); // Hash the new password
+        await User.updateOne({ email: email }, { password: hashedPassword });
+        res.json({
+            message: "Password changed successfully",
+        });
+    } catch (error) {
+        console.error("Error changing password:", error);
+        res.status(500).json({
+            message: "Failed to change password",
+        });
+    }
 }
