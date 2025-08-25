@@ -19,7 +19,7 @@ export const deleteBanner = asyncHandler(async (req, res) => {
     const banner = await Banner.findByIdAndDelete(req.params.id);
     if (banner) {
         res.status(400);
-        throw new Error("Banner was not deleted");
+        throw new Error("Banner was not deleted"); // throw new Error meaning is to create a new error object and pass it to the next middleware
     } else {
         res.status(200).json("Banner is deleted successfully");
     }
