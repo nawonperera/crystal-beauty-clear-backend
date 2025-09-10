@@ -256,3 +256,32 @@ export async function changePassword(req, res) {
         });
     }
 }
+
+export function getUsers(req, res) {
+    User.find()
+        .then((users) => {
+            res.json(users);
+        })
+        .catch((err) => {
+            res.status(500).json({
+                message: "users not found",
+            });
+        });
+}
+
+export async function blockUser(req, res) {
+    try {
+        console.log(req.user);
+
+        if (!req.user) return res.status(403).json({ message: "You need to login first" });
+        if (req.user.role !== "admin") return res.status(403).json({ message: "Not authorized" });
+
+        const user = await User.findOneAndUpdate({ userEmail: req.params.userEmail }, { isDisabled: true }, { new: true });
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        res.json({ message: "User blocked successfully", user });
+    } catch (err) {
+        res.status(500).json({ message: "User not blocked", error: err.message });
+    }
+}
