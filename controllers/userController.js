@@ -271,17 +271,34 @@ export function getUsers(req, res) {
 
 export async function blockUser(req, res) {
     try {
-        console.log(req.user);
-
         if (!req.user) return res.status(403).json({ message: "You need to login first" });
         if (req.user.role !== "admin") return res.status(403).json({ message: "Not authorized" });
 
-        const user = await User.findOneAndUpdate({ userEmail: req.params.userEmail }, { isDisabled: true }, { new: true });
+        const user = await User.findOneAndUpdate({ email: req.params.userEmail }, { isDisabled: true }, { new: true });
+        //console.log("this is the user", user);
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
         res.json({ message: "User blocked successfully", user });
     } catch (err) {
         res.status(500).json({ message: "User not blocked", error: err.message });
+    }
+}
+
+export async function unblockUser(req, res) {
+    try {
+        console.log("this is", req.params.userEmail);
+
+        if (!req.user) return res.status(403).json({ message: "You need to login first" });
+        if (req.user.role !== "admin") return res.status(403).json({ message: "Not authorized" });
+
+        const user = await User.findOneAndUpdate({ email: req.params.userEmail }, { isDisabled: false }, { new: true });
+        //console.log("this is the user", user);
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        res.json({ message: "User unblocked successfully", user });
+    } catch (err) {
+        res.status(500).json({ message: "User not unblocked", error: err.message });
     }
 }

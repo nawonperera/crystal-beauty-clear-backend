@@ -25,8 +25,8 @@ mongoose
     });
 
 app.use(bodyParser.json());
-app.use(checkBlocked);
 app.use(verifyJWT); // Middleware to authenticate users based on the "Authorization" header
+//app.use(checkBlocked);
 
 app.use("/api/user", userRouter);
 
