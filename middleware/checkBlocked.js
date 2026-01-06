@@ -1,13 +1,12 @@
 const checkBlocked = (req, res, next) => {
-    if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized: User not found" });
+    try {
+        if (req.user.isDisabled === false) {
+            return res.status(403).json({ message: "Your account is blocked" });
+        }
+        next();
+    } catch (err) {
+        console.log(err);
     }
-
-    if (req.user.isDisabled) {
-        return res.status(403).json({ message: "Your account is blocked" });
-    }
-
-    next();
 };
 
 export default checkBlocked;

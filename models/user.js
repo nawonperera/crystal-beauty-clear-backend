@@ -3,8 +3,8 @@ import mongoose from 'mongoose'
 const userSchema = new mongoose.Schema({
     email : {
         type : String,
-        required : true, // Email is definitely required
-        unique : true // Ensures the email must be unique
+        required : true,
+        unique : true
     },
     firstName : {
         type : String,
@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
     role : {
         type : String,
         required : true,
-        default : "user" //customer
+        default : "user"
     },
     password : {
         type : String,
@@ -37,7 +37,10 @@ const userSchema = new mongoose.Schema({
         type : Boolean,
         required : true,
         default : false
-
+    },
+    wishlist : {
+        type : [String],
+        default : []
     }
 })
 

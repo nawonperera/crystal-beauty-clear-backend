@@ -9,6 +9,10 @@ import {
     saveUser,
     sendOTP,
     unblockUser,
+    getWishlist,
+    addToWishlist,
+    removeFromWishlist,
+    toggleWishlist,
 } from "../controllers/userController.js";
 
 const userRouter = express.Router();
@@ -30,5 +34,11 @@ userRouter.post("/changePassword", changePassword);
 userRouter.patch("/block/:userEmail", blockUser);
 
 userRouter.patch("/unblock/:userEmail", unblockUser);
+
+// Wishlist routes
+userRouter.get("/wishlist", getWishlist);
+userRouter.post("/wishlist", addToWishlist);
+userRouter.post("/wishlist/toggle", toggleWishlist);
+userRouter.delete("/wishlist/:productId", removeFromWishlist);
 
 export default userRouter;

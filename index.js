@@ -5,6 +5,7 @@ import userRouter from "./routes/userRouter.js";
 import productRouter from "./routes/productRouter.js";
 import verifyJWT from "./middleware/auth.js";
 import orderRouter from "./routes/orderRouter.js";
+import messageRouter from "./routes/messageRouter.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import checkBlocked from "./middleware/checkBlocked.js";
@@ -33,6 +34,8 @@ app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 
 app.use("/api/order", orderRouter);
+
+app.use("/api/message", messageRouter);
 
 app.listen(3000, () => {
     console.log("server is running on port 3000");

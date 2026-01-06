@@ -40,7 +40,8 @@ export function saveUser(req, res) {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
         password: hashedPassword,
-        role: req.body.role,
+        phone: req.body.phone || "Not given",
+        role: req.body.role || "user",
     });
 
     user.save()
@@ -49,10 +50,16 @@ export function saveUser(req, res) {
                 message: "User saved successfully",
             });
         })
-        .catch(() => {
-            res.status(500).json({
-                message: "User not saved",
-            });
+        .catch((err) => {
+            if (err.code === 11000) {
+                res.status(400).json({
+                    message: "Email already exists",
+                });
+            } else {
+                res.status(500).json({
+                    message: "User not saved",
+                });
+            }
         });
 }
 
@@ -287,8 +294,6 @@ export async function blockUser(req, res) {
 
 export async function unblockUser(req, res) {
     try {
-        console.log("this is", req.params.userEmail);
-
         if (!req.user) return res.status(403).json({ message: "You need to login first" });
         if (req.user.role !== "admin") return res.status(403).json({ message: "Not authorized" });
 
@@ -300,5 +305,127 @@ export async function unblockUser(req, res) {
         res.json({ message: "User unblocked successfully", user });
     } catch (err) {
         res.status(500).json({ message: "User not unblocked", error: err.message });
+    }
+}
+
+
+// Get user's wishlist
+export async function getWishlist(req, res) {
+    try {
+        if (!req.user) {
+            return res.status(403).json({ message: "Please login to view wishlist" });
+        }
+
+        const user = await User.findOne({ email: req.user.email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({ wishlist: user.wishlist || [] });
+    } catch (error) {
+        console.error("Error fetching wishlist:", error);
+        res.status(500).json({ message: "Failed to fetch wishlist" });
+    }
+}
+
+// Add product to wishlist
+export async function addToWishlist(req, res) {
+    try {
+        if (!req.user) {
+            return res.status(403).json({ message: "Please login to add to wishlist" });
+        }
+
+        const { productId } = req.body;
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
+        }
+
+        const user = await User.findOne({ email: req.user.email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if already in wishlist
+        if (user.wishlist.includes(productId)) {
+            return res.json({ message: "Product already in wishlist", wishlist: user.wishlist });
+        }
+
+        // Add to wishlist
+        user.wishlist.push(productId);
+        await user.save();
+
+        res.json({ message: "Added to wishlist", wishlist: user.wishlist });
+    } catch (error) {
+        console.error("Error adding to wishlist:", error);
+        res.status(500).json({ message: "Failed to add to wishlist" });
+    }
+}
+
+// Remove product from wishlist
+export async function removeFromWishlist(req, res) {
+    try {
+        if (!req.user) {
+            return res.status(403).json({ message: "Please login to remove from wishlist" });
+        }
+
+        const { productId } = req.params;
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
+        }
+
+        const user = await User.findOne({ email: req.user.email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Remove from wishlist
+        user.wishlist = user.wishlist.filter(id => id !== productId);
+        await user.save();
+
+        res.json({ message: "Removed from wishlist", wishlist: user.wishlist });
+    } catch (error) {
+        console.error("Error removing from wishlist:", error);
+        res.status(500).json({ message: "Failed to remove from wishlist" });
+    }
+}
+
+// Toggle wishlist (add if not exists, remove if exists)
+export async function toggleWishlist(req, res) {
+    try {
+        if (!req.user) {
+            return res.status(403).json({ message: "Please login to manage wishlist" });
+        }
+
+        const { productId } = req.body;
+        if (!productId) {
+            return res.status(400).json({ message: "Product ID is required" });
+        }
+
+        const user = await User.findOne({ email: req.user.email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        let action;
+        if (user.wishlist.includes(productId)) {
+            // Remove from wishlist
+            user.wishlist = user.wishlist.filter(id => id !== productId);
+            action = "removed";
+        } else {
+            // Add to wishlist
+            user.wishlist.push(productId);
+            action = "added";
+        }
+        
+        await user.save();
+
+        res.json({ 
+            message: action === "added" ? "Added to wishlist" : "Removed from wishlist",
+            action,
+            wishlist: user.wishlist 
+        });
+    } catch (error) {
+        console.error("Error toggling wishlist:", error);
+        res.status(500).json({ message: "Failed to update wishlist" });
     }
 }

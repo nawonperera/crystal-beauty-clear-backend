@@ -41,6 +41,106 @@ export function getProducts(req, res) {
         });
 }
 
+// Filter products with query parameters
+export async function filterProducts(req, res) {
+    try {
+        const { 
+            search, 
+            category, 
+            minPrice, 
+            maxPrice, 
+            sortBy,
+            page = 1,
+            limit = 20 
+        } = req.query;
+
+        // Build filter object
+        const filter = {};
+
+        // Search by name or altNames
+        if (search && search.trim() !== "") {
+            filter.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { altNames: { $elemMatch: { $regex: search, $options: "i" } } },
+                { description: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        // Filter by category
+        if (category && category !== "all") {
+            filter.category = category;
+        }
+
+        // Filter by price range
+        if (minPrice || maxPrice) {
+            filter.price = {};
+            if (minPrice) filter.price.$gte = parseFloat(minPrice);
+            if (maxPrice) filter.price.$lte = parseFloat(maxPrice);
+        }
+
+        // Build sort object
+        let sort = {};
+        switch (sortBy) {
+            case "price-low":
+                sort = { price: 1 };
+                break;
+            case "price-high":
+                sort = { price: -1 };
+                break;
+            case "newest":
+                sort = { createdAt: -1 };
+                break;
+            case "name-asc":
+                sort = { name: 1 };
+                break;
+            case "name-desc":
+                sort = { name: -1 };
+                break;
+            default:
+                sort = { createdAt: -1 }; // Default: newest first
+        }
+
+        // Calculate pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Execute query
+        const products = await Product.find(filter)
+            .sort(sort)
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        // Get total count for pagination
+        const totalCount = await Product.countDocuments(filter);
+
+        res.json({
+            products,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(totalCount / parseInt(limit)),
+                totalProducts: totalCount,
+                hasMore: skip + products.length < totalCount
+            }
+        });
+    } catch (err) {
+        console.error("Filter error:", err);
+        res.status(500).json({
+            message: "Error filtering products",
+        });
+    }
+}
+
+// Get all unique categories
+export async function getCategories(req, res) {
+    try {
+        const categories = await Product.distinct("category");
+        res.json({ categories });
+    } catch (err) {
+        res.status(500).json({
+            message: "Error fetching categories",
+        });
+    }
+}
+
 export async function getProductById(req, res) {
     const productId = req.params.id;
     const product = await Product.findOne({ productID: productId });

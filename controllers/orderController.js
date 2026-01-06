@@ -87,6 +87,7 @@ export function getOrders(req, res) {
 
     if (req.user.role === "admin") {
         Order.find()
+            .sort({ date: -1 })
             .then((orders) => {
                 res.json(orders);
             })
@@ -99,6 +100,7 @@ export function getOrders(req, res) {
         Order.find({
             email: req.user.email,
         })
+            .sort({ date: -1 })
             .then((orders) => {
                 res.json(orders);
             })
